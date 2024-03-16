@@ -1,0 +1,19 @@
+\documentclass[../main.tex]{subfiles}
+
+\begin{document}
+\chapter{Discussion}
+After we reviewed the dataset, we can see several issues. 
+Notably, numerous articles were assigned more than four labels, 
+which is an unlikely scenario for one article to cover that many fields. 
+Furthermore, some articles were mislabeled, 
+such as those discussing herbal studies but classified under mechanical engineering, 
+highlighting inconsistencies and irrelevance in the labeling. 
+These observations suggest that the dataset requires further cleaning and accurate relabeling to improve model performance. 
+Furthermore, our current approach utilizes the bert-base-uncased model, which is not case-sensitive. 
+In future iterations, it might be advantageous to utilize bert-large-cased, 
+which is pre-trained on a larger dataset and retains case sensitivity. 
+This could be beneficial for datasets containing a lot  of specific names and terms 
+where capitalization could provide additional context or distinguish between acronyms and common words, 
+potentially improving the model's accuracy and understanding of the subject matter.
+
+\end{document}

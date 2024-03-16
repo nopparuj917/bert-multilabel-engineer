@@ -1,0 +1,127 @@
+\documentclass[../main.tex]{subfiles}
+
+\begin{document}
+\chapter{Results}
+
+Upon training, the model achieved a macro F1 score of 0.6008 on the test set. 
+The model was then used to predict classifications on a real testing dataset, 
+which was submitted to Kaggle, and received a macro F1 score of 0.60388.
+\vspace{0.2in}
+
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{trainer}\PY{o}{.}\PY{n}{evaluate}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    
+            \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
+\prompt{Out}{outcolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\{'eval\_loss': 0.23503780364990234,
+ 'eval\_f1': 0.6008195667678425,
+ 'eval\_hamming\_loss': 0.08695652173913043,
+ 'eval\_runtime': 1.3919,
+ 'eval\_samples\_per\_second': 33.048,
+ 'eval\_steps\_per\_second': 16.524,
+ 'epoch': 21.0\}
+\end{Verbatim}
+\end{tcolorbox}
+        
+    \subsection{Save model}\label{save-model}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{trainer}\PY{o}{.}\PY{n}{save\PYZus{}model}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{bert\PYZhy{}multilabel\PYZhy{}engineer}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{tokenizer}\PY{o}{.}\PY{n}{save\PYZus{}pretrained}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{bert\PYZhy{}tokenizer}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+\newpage
+
+    \subsection{Predictions}\label{predictions}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{text} \PY{o}{=} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Comparative Electrical Energy Yield Performance of Micro\PYZhy{}Inverter PV Systems Using a Machine Learning Approach Based on a Mixed\PYZhy{}Effect Model of Real Datasets © 2013 IEEE.Long\PYZhy{}term energy evaluation of PV systems that use micro\PYZhy{}inverter configuration (micro\PYZhy{}inverter PV systems) is currently unclear due to the lacking of sufficient longitudinal measurement data and appropriate analysis method. The poor knowledge about impact and aging of micro\PYZhy{}inverter PV system affects the comprehension and accuracy of PV design and simulation tools. In this paper, we propose a machine learning approach based on the mixed\PYZhy{}effect model to compare and evaluate the electrical energy yield of micro\PYZhy{}inverter PV systems. The analyzed results using a 5\PYZhy{}year period data of PV stations located at Concord, Massachusetts, USA showed that there is no significant difference in yearly electrical energy yield of micro\PYZhy{}inverter PV systems under shading and non\PYZhy{}shading condition. This finding has confirmed the advantage of micro\PYZhy{}inverter PV system over the other PV types. In addition, our work is the first study that identified the average degradation rate of micro\PYZhy{}inverter PV of 3}\PY{l+s+s2}{\PYZpc{}}\PY{l+s+s2}{ per year (95}\PY{l+s+si}{\PYZpc{} c}\PY{l+s+s2}{onfidence intervals: 2}\PY{l+s+si}{\PYZpc{}\PYZhy{}4.3\PYZpc{}}\PY{l+s+s2}{). Our findings in this study have extended substantially the comprehensive understanding of micro\PYZhy{}inverter PV system.}\PY{l+s+s2}{\PYZdq{}}
+
+\PY{n}{encoding} \PY{o}{=} \PY{n}{tokenizer}\PY{p}{(}\PY{n}{text}\PY{p}{,} \PY{n}{return\PYZus{}tensors}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{pt}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{encoding}\PY{o}{.}\PY{n}{to}\PY{p}{(}\PY{n}{trainer}\PY{o}{.}\PY{n}{model}\PY{o}{.}\PY{n}{device}\PY{p}{)}
+
+\PY{n}{outputs} \PY{o}{=} \PY{n}{trainer}\PY{o}{.}\PY{n}{model}\PY{p}{(}\PY{o}{*}\PY{o}{*}\PY{n}{encoding}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{sigmoid} \PY{o}{=} \PY{n}{torch}\PY{o}{.}\PY{n}{nn}\PY{o}{.}\PY{n}{Sigmoid}\PY{p}{(}\PY{p}{)}
+\PY{n}{probs} \PY{o}{=} \PY{n}{sigmoid}\PY{p}{(}\PY{n}{outputs}\PY{o}{.}\PY{n}{logits}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{o}{.}\PY{n}{cpu}\PY{p}{(}\PY{p}{)}\PY{p}{)}
+\PY{n}{preds} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{zeros}\PY{p}{(}\PY{n}{probs}\PY{o}{.}\PY{n}{shape}\PY{p}{)}
+\PY{n}{preds}\PY{p}{[}\PY{n}{np}\PY{o}{.}\PY{n}{where}\PY{p}{(}\PY{n}{probs}\PY{o}{\PYZgt{}}\PY{o}{=}\PY{l+m+mf}{0.3}\PY{p}{)}\PY{p}{]} \PY{o}{=} \PY{l+m+mi}{1}
+\PY{n}{preds}
+\end{Verbatim}
+\end{tcolorbox}
+
+            \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
+\prompt{Out}{outcolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+array([0., 0., 0., 1., 0., 0., 1., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0.,
+       0.])
+\end{Verbatim}
+\end{tcolorbox}
+        
+\newpage
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{test\PYZus{}data} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{read\PYZus{}csv}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{./test\PYZus{}for\PYZus{}student\PYZus{}clean.csv}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{predict\PYZus{}labels}\PY{p}{(}\PY{n}{text}\PY{p}{)}\PY{p}{:}
+    \PY{n}{encoding} \PY{o}{=} \PY{n}{tokenizer}\PY{p}{(}\PY{n}{text}\PY{p}{,}
+                         \PY{n}{return\PYZus{}tensors}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{pt}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+                         \PY{n}{padding}\PY{o}{=}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{max\PYZus{}length}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}
+                         \PY{n}{max\PYZus{}length}\PY{o}{=}\PY{n}{MAX\PYZus{}LEN}\PY{p}{,}
+                         \PY{n}{truncation}\PY{o}{=}\PY{k+kc}{True}
+                         \PY{p}{)}
+    \PY{n}{encoding}\PY{o}{.}\PY{n}{to}\PY{p}{(}\PY{n}{trainer}\PY{o}{.}\PY{n}{model}\PY{o}{.}\PY{n}{device}\PY{p}{)}
+
+    \PY{n}{outputs} \PY{o}{=} \PY{n}{trainer}\PY{o}{.}\PY{n}{model}\PY{p}{(}\PY{o}{*}\PY{o}{*}\PY{n}{encoding}\PY{p}{)}
+    \PY{n}{sigmoid} \PY{o}{=} \PY{n}{torch}\PY{o}{.}\PY{n}{nn}\PY{o}{.}\PY{n}{Sigmoid}\PY{p}{(}\PY{p}{)}
+    \PY{n}{probs} \PY{o}{=} \PY{n}{sigmoid}\PY{p}{(}\PY{n}{outputs}\PY{o}{.}\PY{n}{logits}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{o}{.}\PY{n}{cpu}\PY{p}{(}\PY{p}{)}\PY{p}{)}
+    \PY{n}{preds} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{zeros}\PY{p}{(}\PY{n}{probs}\PY{o}{.}\PY{n}{shape}\PY{p}{)}
+    \PY{n}{preds}\PY{p}{[}\PY{n}{np}\PY{o}{.}\PY{n}{where}\PY{p}{(}\PY{n}{probs} \PY{o}{\PYZgt{}}\PY{o}{=} \PY{l+m+mf}{0.3}\PY{p}{)}\PY{p}{]} \PY{o}{=} \PY{l+m+mi}{1}
+    \PY{k}{return} \PY{n}{preds}\PY{o}{.}\PY{n}{astype}\PY{p}{(}\PY{n+nb}{int}\PY{p}{)}
+
+
+\PY{n}{prediction\PYZus{}data} \PY{o}{=} \PY{p}{[}\PY{p}{]}
+\PY{k}{for} \PY{n}{idx}\PY{p}{,} \PY{n}{row} \PY{o+ow}{in} \PY{n}{test\PYZus{}data}\PY{o}{.}\PY{n}{iterrows}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+    \PY{n}{id\PYZus{}} \PY{o}{=} \PY{n}{row}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{id}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+    \PY{n}{text} \PY{o}{=} \PY{n}{row}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{text}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+    \PY{n}{predictions} \PY{o}{=} \PY{n}{predict\PYZus{}labels}\PY{p}{(}\PY{n}{text}\PY{p}{)}\PY{o}{.}\PY{n}{tolist}\PY{p}{(}\PY{p}{)}
+    \PY{n}{prediction\PYZus{}data}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{p}{[}\PY{n}{id\PYZus{}}\PY{p}{]} \PY{o}{+} \PY{n}{predictions}\PY{p}{)}
+
+\PY{n}{prediction\PYZus{}df} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{DataFrame}\PY{p}{(}\PY{n}{prediction\PYZus{}data}\PY{p}{,} \PY{n}{columns}\PY{o}{=}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{id}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{+} \PY{n}{labels}\PY{p}{)}
+\PY{n}{prediction\PYZus{}path} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{prediction.csv}\PY{l+s+s1}{\PYZsq{}}
+\PY{n}{prediction\PYZus{}df}\PY{o}{.}\PY{n}{to\PYZus{}csv}\PY{p}{(}\PY{n}{prediction\PYZus{}path}\PY{p}{,} \PY{n}{index}\PY{o}{=}\PY{k+kc}{False}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+
+\begin{center}
+\adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{../../data/picture/pic4.png}
+\end{center}
+% { \hspace*{\fill} \\}
+
+\end{document}

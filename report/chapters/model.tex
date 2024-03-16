@@ -1,0 +1,235 @@
+\documentclass[../main.tex]{subfiles}
+
+\begin{document}
+\chapter{Model}
+For this project, we utilized the bert-base-uncased model from Google. BERT, short for Bidirectional Encoder 
+Representations from Transformers, is a model pre-trained on a vast corpus of English data in a self-supervised manner. 
+This pre-training involved learning from raw text without any explicit human labeling. The choice of BERT is predicated 
+on its ability to understand the context of words in a sentence by considering the words that come before and after, 
+making it highly effective for tasks requiring a deep understanding of language nuances. The model's performance was 
+measured using the macro F1 score.
+\vspace{0.2in}
+
+
+
+\begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{err}{!}\PY{n}{pip} \PY{n}{install} \PY{o}{\PYZhy{}}\PY{n}{U} \PY{n}{accelerate}
+\PY{err}{!}\PY{n}{pip} \PY{n}{install} \PY{o}{\PYZhy{}}\PY{n}{U} \PY{n}{transformers}
+\PY{err}{!}\PY{n}{pip} \PY{n}{install} \PY{n}{datasets}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \subsection{Connect to google drive}\label{connect-to-google-drive}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{k+kn}{from} \PY{n+nn}{google}\PY{n+nn}{.}\PY{n+nn}{colab} \PY{k+kn}{import} \PY{n}{drive}
+\PY{k+kn}{import} \PY{n+nn}{os}
+\PY{n}{drive}\PY{o}{.}\PY{n}{mount}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{/content/drive}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{os}\PY{o}{.}\PY{n}{chdir}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{drive/My Drive/contents}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+Mounted at /content/drive
+    \end{Verbatim}
+
+    \subsection{Import \& set seed}\label{import-set-seed}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{seed} \PY{o}{=} \PY{l+m+mi}{21}
+
+\PY{k+kn}{import} \PY{n+nn}{torch}
+\PY{n}{torch}\PY{o}{.}\PY{n}{manual\PYZus{}seed}\PY{p}{(}\PY{n}{seed}\PY{p}{)}
+\PY{n}{torch}\PY{o}{.}\PY{n}{use\PYZus{}deterministic\PYZus{}algorithms}\PY{p}{(}\PY{k+kc}{True}\PY{p}{)}
+
+\PY{k+kn}{import} \PY{n+nn}{random}
+\PY{n}{random}\PY{o}{.}\PY{n}{seed}\PY{p}{(}\PY{n}{seed}\PY{p}{)}
+
+\PY{k+kn}{import} \PY{n+nn}{numpy} \PY{k}{as} \PY{n+nn}{np}
+\PY{n}{np}\PY{o}{.}\PY{n}{random}\PY{o}{.}\PY{n}{seed}\PY{p}{(}\PY{n}{seed}\PY{p}{)}
+
+
+\PY{k+kn}{import} \PY{n+nn}{transformers}
+\PY{n}{transformers}\PY{o}{.}\PY{n}{enable\PYZus{}full\PYZus{}determinism}\PY{p}{(}\PY{n}{seed}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{k+kn}{import} \PY{n+nn}{pandas} \PY{k}{as} \PY{n+nn}{pd}
+\PY{k+kn}{from} \PY{n+nn}{datasets} \PY{k+kn}{import} \PY{n}{load\PYZus{}dataset}
+\PY{k+kn}{from} \PY{n+nn}{sklearn}\PY{n+nn}{.}\PY{n+nn}{metrics} \PY{k+kn}{import}  \PY{n}{f1\PYZus{}score}\PY{p}{,} \PY{n}{hamming\PYZus{}loss}
+\PY{k+kn}{from} \PY{n+nn}{transformers} \PY{k+kn}{import} \PY{n}{BertForSequenceClassification}\PY{p}{,} \PY{n}{BertTokenizer}\PY{p}{,} \PY{n}{TrainingArguments}\PY{p}{,} \PY{n}{Trainer}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \subsection{Set hyperparameters}\label{set-hyperparameters}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{checkpoint} \PY{o}{=} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{bert\PYZhy{}base\PYZhy{}uncased}\PY{l+s+s2}{\PYZdq{}}
+\PY{n}{data\PYZus{}path} \PY{o}{=} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{train\PYZus{}for\PYZus{}student\PYZus{}clean.csv}\PY{l+s+s2}{\PYZdq{}}
+\PY{n}{labels} \PY{o}{=} \PY{p}{[} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{CE}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{ENV}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{BME}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{PE}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{METAL}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{ME}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{EE}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{CPE}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{OPTIC}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{NANO}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{CHE}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{MATENG}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AGRI}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{EDU}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{IE}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{SAFETY}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{MATH}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{MATSCI}\PY{l+s+s2}{\PYZdq{}}\PY{p}{]}
+\PY{n}{MAX\PYZus{}LEN} \PY{o}{=} \PY{l+m+mi}{246}
+\PY{n}{TRAIN\PYZus{}BATCH\PYZus{}SIZE} \PY{o}{=} \PY{l+m+mi}{2}
+\PY{n}{VALID\PYZus{}BATCH\PYZus{}SIZE} \PY{o}{=} \PY{l+m+mi}{2}
+\PY{n}{TEST\PYZus{}BATCH\PYZus{}SIZE} \PY{o}{=} \PY{l+m+mi}{2}
+\PY{n}{EPOCHS} \PY{o}{=} \PY{l+m+mi}{21}
+\PY{n}{LEARNING\PYZus{}RATE} \PY{o}{=} \PY{l+m+mf}{5e\PYZhy{}05}
+\PY{n}{THRESHOLD} \PY{o}{=} \PY{l+m+mf}{0.3}
+\PY{n}{WEIGHT\PYZus{}DECAY} \PY{o}{=} \PY{l+m+mf}{0.001}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \subsection{Load model}\label{load-model}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{tokenizer} \PY{o}{=} \PY{n}{BertTokenizer}\PY{o}{.}\PY{n}{from\PYZus{}pretrained}\PY{p}{(}\PY{n}{checkpoint}\PY{p}{)}
+\PY{n}{model} \PY{o}{=} \PY{n}{BertForSequenceClassification}\PY{o}{.}\PY{n}{from\PYZus{}pretrained}\PY{p}{(}\PY{n}{checkpoint}\PY{p}{,} \PY{n}{num\PYZus{}labels}\PY{o}{=}\PY{n+nb}{len}\PY{p}{(}\PY{n}{labels}\PY{p}{)}\PY{p}{,}
+                                                            \PY{n}{problem\PYZus{}type}\PY{o}{=}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{multi\PYZus{}label\PYZus{}classification}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \subsection{Prepare the data}\label{prepare-the-data}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{data} \PY{o}{=} \PY{n}{load\PYZus{}dataset}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{csv}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{data\PYZus{}files}\PY{o}{=}\PY{n}{data\PYZus{}path}\PY{p}{)}
+\PY{n}{data} \PY{o}{=} \PY{n}{data}\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{train}\PY{l+s+s2}{\PYZdq{}}\PY{p}{]}\PY{o}{.}\PY{n}{train\PYZus{}test\PYZus{}split}\PY{p}{(}\PY{n}{test\PYZus{}size}\PY{o}{=}\PY{l+m+mf}{0.1}\PY{p}{,} \PY{n}{seed}\PY{o}{=}\PY{n}{seed}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{k}{def} \PY{n+nf}{preprocess\PYZus{}function}\PY{p}{(}\PY{n}{examples}\PY{p}{)}\PY{p}{:}
+    \PY{n}{tokenized\PYZus{}inputs} \PY{o}{=} \PY{n}{tokenizer}\PY{p}{(}\PY{n}{examples}\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{text}\PY{l+s+s2}{\PYZdq{}}\PY{p}{]}\PY{p}{,} \PY{n}{padding}\PY{o}{=}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{max\PYZus{}length}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{truncation}\PY{o}{=}\PY{k+kc}{True}\PY{p}{,} \PY{n}{max\PYZus{}length}\PY{o}{=}\PY{n}{MAX\PYZus{}LEN}\PY{p}{)}
+    \PY{n}{label\PYZus{}dict} \PY{o}{=} \PY{p}{\PYZob{}}\PY{p}{\PYZcb{}}
+    \PY{k}{for} \PY{n}{label} \PY{o+ow}{in} \PY{n}{labels}\PY{p}{:}
+        \PY{n}{label\PYZus{}dict}\PY{p}{[}\PY{n}{label}\PY{p}{]} \PY{o}{=} \PY{n}{examples}\PY{p}{[}\PY{n}{label}\PY{p}{]}
+    \PY{n}{tokenized\PYZus{}inputs}\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{labels}\PY{l+s+s2}{\PYZdq{}}\PY{p}{]} \PY{o}{=} \PY{p}{[}\PY{p}{[}\PY{n+nb}{float}\PY{p}{(}\PY{n}{label\PYZus{}dict}\PY{p}{[}\PY{n}{label}\PY{p}{]}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{)} \PY{k}{for} \PY{n}{label} \PY{o+ow}{in} \PY{n}{labels}\PY{p}{]} \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n+nb}{len}\PY{p}{(}\PY{n}{examples}\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{text}\PY{l+s+s2}{\PYZdq{}}\PY{p}{]}\PY{p}{)}\PY{p}{)}\PY{p}{]}
+    \PY{k}{return} \PY{n}{tokenized\PYZus{}inputs}
+
+\PY{n}{tokenized\PYZus{}data} \PY{o}{=} \PY{n}{data}\PY{o}{.}\PY{n}{map}\PY{p}{(}\PY{n}{preprocess\PYZus{}function}\PY{p}{,} \PY{n}{batched}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \subsection{Set the computation metrics to be F1 score and Hamming
+loss.}\label{set-the-computation-metrics-to-be-f1-score-and-hamming-loss.}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{k}{def} \PY{n+nf}{compute\PYZus{}metrics}\PY{p}{(}\PY{n}{eval\PYZus{}pred}\PY{p}{)}\PY{p}{:}
+    \PY{n}{predictions}\PY{p}{,} \PY{n}{ref} \PY{o}{=} \PY{n}{eval\PYZus{}pred}
+    \PY{n}{sigmoid} \PY{o}{=} \PY{n}{torch}\PY{o}{.}\PY{n}{nn}\PY{o}{.}\PY{n}{Sigmoid}\PY{p}{(}\PY{p}{)}
+    \PY{n}{probs} \PY{o}{=} \PY{n}{sigmoid}\PY{p}{(}\PY{n}{torch}\PY{o}{.}\PY{n}{Tensor}\PY{p}{(}\PY{n}{predictions}\PY{p}{)}\PY{p}{)}
+
+    \PY{n}{y\PYZus{}pred} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{zeros}\PY{p}{(}\PY{n}{probs}\PY{o}{.}\PY{n}{shape}\PY{p}{)}
+    \PY{n}{y\PYZus{}pred}\PY{p}{[}\PY{n}{np}\PY{o}{.}\PY{n}{where}\PY{p}{(}\PY{n}{probs}\PY{o}{\PYZgt{}}\PY{o}{=}\PY{n}{THRESHOLD}\PY{p}{)}\PY{p}{]} \PY{o}{=} \PY{l+m+mi}{1}
+
+    \PY{n}{metrics} \PY{o}{=} \PY{p}{\PYZob{}}
+        \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{f1}\PY{l+s+s2}{\PYZdq{}}\PY{p}{:} \PY{n}{f1\PYZus{}score}\PY{p}{(}\PY{n}{ref}\PY{p}{,} \PY{n}{y\PYZus{}pred}\PY{p}{,} \PY{n}{average} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{macro}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{zero\PYZus{}division}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,}
+        \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{hamming\PYZus{}loss}\PY{l+s+s2}{\PYZdq{}}\PY{p}{:} \PY{n}{hamming\PYZus{}loss}\PY{p}{(}\PY{n}{ref}\PY{p}{,} \PY{n}{y\PYZus{}pred}\PY{p}{)}\PY{p}{,}
+    \PY{p}{\PYZcb{}}
+    \PY{k}{return} \PY{n}{metrics}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \subsection{Trainning}\label{trainning}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{training\PYZus{}args} \PY{o}{=} \PY{n}{TrainingArguments}\PY{p}{(}
+    \PY{n}{output\PYZus{}dir} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{./results}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+    \PY{n}{evaluation\PYZus{}strategy}\PY{o}{=}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{epoch}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}
+    \PY{n}{learning\PYZus{}rate}\PY{o}{=}\PY{n}{LEARNING\PYZus{}RATE}\PY{p}{,}
+    \PY{n}{per\PYZus{}device\PYZus{}train\PYZus{}batch\PYZus{}size}\PY{o}{=}\PY{n}{TRAIN\PYZus{}BATCH\PYZus{}SIZE}\PY{p}{,}
+    \PY{n}{per\PYZus{}device\PYZus{}eval\PYZus{}batch\PYZus{}size}\PY{o}{=}\PY{n}{VALID\PYZus{}BATCH\PYZus{}SIZE}\PY{p}{,}
+    \PY{n}{num\PYZus{}train\PYZus{}epochs}\PY{o}{=}\PY{n}{EPOCHS}\PY{p}{,}
+    \PY{n}{save\PYZus{}total\PYZus{}limit}\PY{o}{=}\PY{l+m+mi}{1}\PY{p}{,}
+    \PY{n}{fp16}\PY{o}{=}\PY{k+kc}{True}\PY{p}{,}
+\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{trainer} \PY{o}{=} \PY{n}{Trainer}\PY{p}{(}
+    \PY{n}{model}\PY{o}{=}\PY{n}{model}\PY{p}{,}
+    \PY{n}{args}\PY{o}{=}\PY{n}{training\PYZus{}args}\PY{p}{,}
+    \PY{n}{train\PYZus{}dataset}\PY{o}{=}\PY{n}{tokenized\PYZus{}data}\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{train}\PY{l+s+s2}{\PYZdq{}}\PY{p}{]}\PY{p}{,}
+    \PY{n}{eval\PYZus{}dataset}\PY{o}{=}\PY{n}{tokenized\PYZus{}data}\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{test}\PY{l+s+s2}{\PYZdq{}}\PY{p}{]}\PY{p}{,}
+    \PY{n}{tokenizer}\PY{o}{=}\PY{n}{tokenizer}\PY{p}{,}
+    \PY{n}{compute\PYZus{}metrics}\PY{o}{=}\PY{n}{compute\PYZus{}metrics}\PY{p}{,}
+\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{trainer}\PY{o}{.}\PY{n}{train}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Training Records}
+    \label{table:1}
+    \begin{tabular}{ccccccc}
+        \toprule
+        Epoch & Training Loss & Validation Loss & F1 & Hamming Loss \\
+        \midrule
+        1 & No log & 0.314494 & 0.224889 & 0.150966 \\
+        2 & No log & 0.290898 & 0.297800 & 0.143720 \\
+        3 & 0.368000 & 0.264773 & 0.466495 & 0.117150 \\
+        4 & 0.368000 & 0.247246 & 0.479391 & 0.108696 \\
+        5 & 0.266800 & 0.227199 & 0.570766 & 0.101449 \\
+        6 & 0.266800 & 0.239932 & 0.577966 & 0.121981 \\
+        7 & 0.266800 & 0.231628 & 0.592698 & 0.099034 \\
+        8 & 0.189300 & 0.239384 & 0.637211 & 0.103865 \\
+        9 & 0.189300 & 0.236545 & 0.608009 & 0.100242 \\
+        10 & 0.129300 & 0.241901 & 0.557948 & 0.106280 \\
+        11 & 0.129300 & 0.236051 & 0.620834 & 0.092995 \\
+        12 & 0.129300 & 0.242032 & 0.586037 & 0.100242 \\
+        13 & 0.085600 & 0.242005 & 0.590316 & 0.103865 \\
+        14 & 0.085600 & 0.240049 & 0.620831 & 0.094203 \\
+        15 & 0.059900 & 0.242787 & 0.582370 & 0.096618 \\
+        16 & 0.059900 & 0.241507 & 0.620282 & 0.096618 \\
+        17 & 0.059900 & 0.239307 & 0.569547 & 0.095411 \\
+        18 & 0.046200 & 0.243935 & 0.602460 & 0.092995 \\
+        19 & 0.046200 & 0.243870 & 0.608433 & 0.090580 \\
+        20 & 0.038500 & 0.247260 & 0.597618 & 0.095411 \\
+        21 & 0.038500 & 0.246206 & 0.606484 & 0.091787 \\
+        \bottomrule
+    \end{tabular}
+\end{table} 
+
+    
+\begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
+\prompt{Out}{outcolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+TrainOutput(global\_step=4263, training\_loss=0.1410284964042232,
+metrics=\{'train\_runtime': 1054.9406, 'train\_samples\_per\_second': 8.062,
+'train\_steps\_per\_second': 4.041, 'total\_flos': 1075327978966920.0, 'train\_loss':
+0.1410284964042232, 'epoch': 21.0\})
+\end{Verbatim}
+\end{tcolorbox}
+        
+
+\end{document}
